@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Agenda U</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6fb;--card:#fff;--ink:#14213d;--mute:#5d6b85;--line:#dde4f0;--acc:#0e9aa7;--accT:#fff;--bad:#e4572e;--gold:#f2b134;--ok:#2a9d6f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1729;--card:#18233d;--ink:#eaf0fb;--mute:#9aa8c4;--line:#2a3858;--acc:#34c4d1;--accT:#0f1729}}
+:root[data-theme="dark"]{--bg:#0f1729;--card:#18233d;--ink:#eaf0fb;--mute:#9aa8c4;--line:#2a3858;--acc:#34c4d1;--accT:#0f1729}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.4;padding-bottom:84px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:26px;font-weight:800;margin:4px 0 12px}
+h2{font-size:18px;font-weight:800;margin:20px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.mute{color:var(--mute);font-size:14px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--mute)}
+.tag.bad{color:var(--bad);border-color:var(--bad)}
+.done .t{text-decoration:line-through;opacity:.55}
+input,select,button{font:inherit;color:var(--ink)}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);margin:4px 0}
+label{font-size:13px;color:var(--mute);display:block;margin-top:6px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{background:var(--acc);color:var(--accT);border:0;border-radius:12px;padding:12px;font-weight:800;width:100%;margin-top:10px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.x{background:none;border:0;color:var(--mute);font-size:20px;padding:4px 8px;cursor:pointer}
+details.add{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 14px;margin:8px 0}
+details.add summary{padding:12px 0;font-weight:800;color:var(--acc);cursor:pointer}
+details.add[open]{padding-bottom:12px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:20}
+nav button{flex:1;background:none;border:0;padding:8px 2px;font-size:12px;font-weight:600;color:var(--mute);cursor:pointer}
+nav button b{display:block;font-size:20px}
+nav button.on{color:var(--acc)}
+.check{width:26px;height:26px;border-radius:8px;border:2px solid var(--acc);background:none;flex:none;cursor:pointer;color:var(--acc);font-weight:800}
+.done .check{background:var(--acc);color:var(--accT)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .h{font-size:12px;color:var(--mute);font-weight:600}
+.cal button{aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:var(--card);position:relative;cursor:pointer;font-weight:600}
+.cal button.today{border:2px solid var(--acc)}
+.cal button.sel{background:var(--acc);color:var(--accT)}
+.cal button i{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.cal button i s{width:6px;height:6px;border-radius:50%;background:var(--bad)}
+.cal button i u{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.big{font-size:30px;font-weight:800}
+.bar{height:12px;border-radius:9px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin:8px 0}
+.bar div{height:100%;background:var(--ok)}
+.toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:12px;right:12px;max-width:536px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;z-index:30;font-weight:600}
+.alert{border-color:var(--bad)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<div id="toast"></div>
+<script>
+var KEY='agendaU_v1',DAYS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var CATS=['Comida','Transporte','Fotocopias','Salidas','Estudio','Otro'];
+var S={tasks:[],classes:[],tx:[],goal:null,notified:{}};
+try{var raw=localStorage.getItem(KEY);if(raw){S=Object.assign(S,JSON.parse(raw))}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var tab='agenda',cal={y:new Date().getFullYear(),m:new Date().getMonth(),sel:null};
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function pad(n){return String(n).padStart(2,'0')}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function today(){return iso(new Date())}
+function money(n){return '$'+Math.round(n).toLocaleString('es-CO')}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmtDate(s){var d=new Date(s+'T00:00:00');return DAYS[d.getDay()].slice(0,3)+' '+d.getDate()+' '+MONTHS[d.getMonth()].slice(0,3)}
+function due(t){return new Date(t.date+'T'+(t.time||'08:00')+':00')}
+function v(id){return $(id).value}
+
+function toast(msg){var el=$('toast');el.innerHTML='<div class="toast">'+esc(msg)+'</div>';setTimeout(function(){el.innerHTML=''},6000)}
+function checkReminders(){
+ var now=Date.now(),fired=false;
+ S.tasks.forEach(function(t){
+  if(t.done||t.remind==null||t.remind<0||S.notified[t.id])return;
+  var at=due(t).getTime()-t.remind*60000;
+  if(now>=at){S.notified[t.id]=1;fired=true;
+   var msg='Recordatorio: '+t.title+' ('+t.type+') — '+fmtDate(t.date)+(t.time?' '+t.time:'');
+   toast(msg);
+   try{if('Notification' in window&&Notification.permission==='granted'){new Notification('Mi Agenda U',{body:msg})}}catch(e){}
+  }});
+ if(fired){save();if(tab==='agenda')render()}
+}
+setInterval(checkReminders,30000);
+
+function LN(){try{var C=window.Capacitor;return(C&&C.Plugins&&C.Plugins.LocalNotifications)||null}catch(e){return null}}
+function nid(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%2000000000;return h||1}
+function schedNative(t){var ln=LN();if(!ln||t.done||t.remind<0)return;try{var at=new Date(due(t).getTime()-t.remind*60000);if(at<=new Date())return;ln.schedule({notifications:[{id:nid(t.id),title:'Mi Agenda U',body:t.title+' ('+t.type+')',schedule:{at:at,allowWhileIdle:true}}]})}catch(e){}}
+function cancelNative(id){var ln=LN();if(!ln)return;try{ln.cancel({notifications:[{id:nid(id)}]})}catch(e){}}
+function ask(){
+ var ln=LN();if(ln){try{ln.requestPermissions().then(function(r){var ok=r.display==='granted';S.permOk=ok;save();if(ok)S.tasks.forEach(schedNative);toast(ok?'Notificaciones activadas':'Permiso denegado. Actívalo en los ajustes del celular.');render()})}catch(e){}return}
+ try{if(!('Notification' in window)){toast('Este navegador no permite notificaciones. Verás los avisos dentro de la app.');return}
+  Notification.requestPermission().then(function(p){toast(p==='granted'?'Notificaciones activadas':'Permiso denegado. Verás los avisos dentro de la app.');render()})}catch(e){toast('No se pudieron activar las notificaciones aquí.')}
+}
+
+function setTab(t){tab=t;render();window.scrollTo(0,0)}
+function drawNav(){
+ var items=[['agenda','📝','Entregas'],['cal','📅','Calendario'],['horario','🕒','Horario'],['plata','💰','Plata']];
+ $('nav').innerHTML=items.map(function(i){return '<button class="'+(tab===i[0]?'on':'')+'" onclick="setTab(\''+i[0]+'\')"><b>'+i[1]+'</b>'+i[2]+'</button>'}).join('');
+}
+
+/* ---------- ENTREGAS ---------- */
+function addTask(){
+ var title=v('tt').trim(),date=v('td');
+ if(!title||!date){toast('Escribe el nombre y la fecha de la entrega');return}
+ var nt={id:uid(),title:title,type:v('ty'),subject:v('ts').trim(),date:date,time:v('ti'),remind:+v('tr'),done:false};
+ S.tasks.push(nt);schedNative(nt);
+ save();render();checkReminders();
+}
+function togTask(id){S.tasks.forEach(function(t){if(t.id===id){t.done=!t.done;if(t.done)cancelNative(id);else{delete S.notified[id];schedNative(t)}}});save();render()}
+function delTask(id){cancelNative(id);S.tasks=S.tasks.filter(function(t){return t.id!==id});save();render()}
+function taskCard(t){
+ var late=!t.done&&due(t)<new Date();
+ return '<div class="card row '+(t.done?'done':'')+'"><button class="check" onclick="togTask(\''+t.id+'\')">'+(t.done?'✓':'')+'</button><div class="grow"><div class="t"><b>'+esc(t.title)+'</b></div><div class="mute">'+fmtDate(t.date)+(t.time?' · '+t.time:'')+(t.subject?' · '+esc(t.subject):'')+'</div><span class="tag">'+esc(t.type)+'</span> '+(late?'<span class="tag bad">Vencida</span>':'')+'</div><button class="x" onclick="delTask(\''+t.id+'\')" aria-label="Borrar">✕</button></div>';
+}
+function vAgenda(){
+ var pend=S.tasks.filter(function(t){return !t.done}).sort(function(a,b){return due(a)-due(b)});
+ var dn=S.tasks.filter(function(t){return t.done});
+ var perm=('Notification' in window)?Notification.permission:'no';
+ var h='<h1>Entregas</h1>';
+ if(perm!=='granted'&&!S.permOk)h+='<div class="card"><b>Activa los recordatorios</b><div class="mute">Te avisaremos antes de cada entrega mientras la app esté abierta.</div><button class="btn" onclick="ask()">Activar notificaciones</button></div>';
+ h+='<details class="add"><summary>+ Nueva entrega</summary><label>¿Qué debes entregar?</label><input id="tt" placeholder="Ej: Taller de estadística"><div class="g2"><div><label>Tipo</label><select id="ty"><option>Taller</option><option>Trabajo</option><option>Exposición</option><option>Parcial</option><option>Quiz</option><option>Otro</option></select></div><div><label>Materia</label><input id="ts" placeholder="Ej: Microeconomía"></div><div><label>Fecha</label><input id="td" type="date" value="'+today()+'"></div><div><label>Hora</label><input id="ti" type="time"></div></div><label>Avisarme</label><select id="tr"><option value="1440">1 día antes</option><option value="180">3 horas antes</option><option value="60">1 hora antes</option><option value="15">15 minutos antes</option><option value="0">A la hora</option><option value="-1">Sin aviso</option></select><button class="btn" onclick="addTask()">Guardar entrega</button></details>';
+ if(!pend.length)h+='<div class="card mute">No tienes entregas pendientes. Toca “Nueva entrega” para agregar la primera.</div>';
+ h+=pend.map(taskCard).join('');
+ if(dn.length)h+='<h2>Hechas</h2>'+dn.map(taskCard).join('');
+ return h;
+}
+
+/* ---------- CALENDARIO ---------- */
+function vCal(){
+ var y=cal.y,m=cal.m,first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate();
+ var h='<h1>Calendario</h1><div class="row"><button class="x" onclick="calMove(-1)">◀</button><div class="grow" style="text-align:center"><b>'+MONTHS[m]+' '+y+'</b></div><button class="x" onclick="calMove(1)">▶</button></div><div class="cal" style="margin-top:8px">';
+ ['D','L','M','M','J','V','S'].forEach(function(d){h+='<div class="h">'+d+'</div>'});
+ for(var i=0;i<first;i++)h+='<div></div>';
+ for(var d=1;d<=n;d++){
+  var ds=y+'-'+pad(m+1)+'-'+pad(d),wd=new Date(y,m,d).getDay();
+  var hasT=S.tasks.some(function(t){return t.date===ds&&!t.done}),hasC=S.classes.some(function(c){return +c.day===wd});
+  h+='<button class="'+(ds===today()?'today ':'')+(ds===cal.sel?'sel':'')+'" onclick="calSel(\''+ds+'\')">'+d+'<i>'+(hasT?'<s></s>':'')+(hasC?'<u></u>':'')+'</i></button>';
+ }
+ h+='</div><div class="mute" style="margin-top:8px">🔴 entrega · 🟡 clases</div>';
+ var sd=cal.sel||today(),wd2=new Date(sd+'T00:00:00').getDay();
+ h+='<h2>'+fmtDate(sd)+'</h2>';
+ var ts=S.tasks.filter(function(t){return t.date===sd}).sort(function(a,b){return due(a)-due(b)});
+ var cs=S.classes.filter(function(c){return +c.day===wd2}).sort(function(a,b){return a.start<b.start?-1:1});
+ cs.forEach(function(c){h+=classCard(c,false)});
+ h+=ts.map(taskCard).join('');
+ if(!ts.length&&!cs.length)h+='<div class="card mute">Día libre. No hay clases ni entregas.</div>';
+ return h;
+}
+function calMove(d){cal.m+=d;if(cal.m<0){cal.m=11;cal.y--}if(cal.m>11){cal.m=0;cal.y++}render()}
+function calSel(s){cal.sel=s;render()}
+
+/* ---------- HORARIO ---------- */
+function addClass(){
+ var n=v('cn').trim();if(!n||!v('cs')||!v('ce')){toast('Escribe la materia y las horas de inicio y fin');return}
+ S.classes.push({id:uid(),name:n,day:v('cd'),start:v('cs'),end:v('ce'),room:v('cr').trim(),teacher:v('cp').trim()});save();render();
+}
+function delClass(id){S.classes=S.classes.filter(function(c){return c.id!==id});save();render()}
+function classCard(c,del){
+ return '<div class="card row"><div class="grow"><b>'+esc(c.name)+'</b><div class="mute">'+c.start+' – '+c.end+(c.room?' · '+esc(c.room):'')+(c.teacher?' · '+esc(c.teacher):'')+'</div></div>'+(del?'<button class="x" onclick="delClass(\''+c.id+'\')" aria-label="Borrar">✕</button>':'<span class="tag">Clase</span>')+'</div>';
+}
+function vHorario(){
+ var h='<h1>Horario</h1><details class="add"><summary>+ Nueva clase</summary><label>Materia</label><input id="cn" placeholder="Ej: Microeconomía"><div class="g2"><div><label>Día</label><select id="cd">'+[1,2,3,4,5,6,0].map(function(i){return '<option value="'+i+'">'+DAYS[i]+'</option>'}).join('')+'</select></div><div><label>Salón</label><input id="cr"></div><div><label>Inicio</label><input id="cs" type="time"></div><div><label>Fin</label><input id="ce" type="time"></div></div><label>Docente</label><input id="cp"><button class="btn" onclick="addClass()">Guardar clase</button></details>';
+ var any=false;
+ [1,2,3,4,5,6,0].forEach(function(d){
+  var cs=S.classes.filter(function(c){return +c.day===d}).sort(function(a,b){return a.start<b.start?-1:1});
+  if(cs.length){any=true;h+='<h2>'+DAYS[d]+'</h2>'+cs.map(function(c){return classCard(c,true)}).join('')}
+ });
+ if(!any)h+='<div class="card mute">Aún no tienes clases. Agrega tus materias con su día y hora.</div>';
+ return h;
+}
+
+/* ---------- PLATA ---------- */
+function addTx(){
+ var a=parseFloat(v('xa'));if(!(a>0)){toast('Escribe un valor mayor a 0');return}
+ S.tx.push({id:uid(),kind:v('xk'),amount:a,cat:v('xc'),note:v('xn').trim(),date:v('xd')||today()});save();render();
+}
+function delTx(id){S.tx=S.tx.filter(function(t){return t.id!==id});save();render()}
+function saveGoal(){
+ var t=parseFloat(v('gt'));if(!(t>0)||!v('gd')){toast('Escribe cuánto quieres ahorrar y para cuándo');return}
+ S.goal={name:v('gn').trim()||'Mi meta',target:t,date:v('gd')};save();render();
+}
+function clearGoal(){S.goal=null;save();render()}
+function sum(arr,k){return arr.filter(function(t){return t.kind===k}).reduce(function(s,t){return s+t.amount},0)}
+function vPlata(){
+ var now=new Date(),ym=now.getFullYear()+'-'+pad(now.getMonth()+1),td=today();
+ var mt=S.tx.filter(function(t){return t.date.slice(0,7)===ym}),tt=S.tx.filter(function(t){return t.date===td});
+ var gMes=sum(mt,'gasto'),iMes=sum(mt,'ingreso'),gHoy=sum(tt,'gasto'),dia=now.getDate();
+ var spentDays={};mt.forEach(function(t){if(t.kind==='gasto')spentDays[t.date]=1});
+ var sinGasto=dia-Object.keys(spentDays).length;
+ var byCat={};mt.filter(function(t){return t.kind==='gasto'}).forEach(function(t){byCat[t.cat]=(byCat[t.cat]||0)+t.amount});
+ var top=Object.keys(byCat).sort(function(a,b){return byCat[b]-byCat[a]})[0];
+ var h='<h1>Mi plata</h1><div class="g2"><div class="card"><div class="mute">Gastado hoy</div><div class="big">'+money(gHoy)+'</div></div><div class="card"><div class="mute">Gastado este mes</div><div class="big">'+money(gMes)+'</div></div></div>';
+ h+='<div class="card"><div class="row"><div class="grow"><div class="mute">Promedio diario del mes</div><b>'+money(gMes/dia)+'</b></div><div class="grow"><div class="mute">Días sin gastar</div><b>'+sinGasto+' de '+dia+'</b></div></div>'+(iMes?'<div class="mute" style="margin-top:6px">Ingresos del mes: '+money(iMes)+' · Te quedan '+money(iMes-gMes-sum(mt,'ahorro'))+'</div>':'')+(top?'<div class="mute" style="margin-top:6px">Donde más gastas: <b>'+esc(top)+'</b> ('+money(byCat[top])+')</div>':'')+'</div>';
+ h+='<h2>Meta de ahorro</h2>';
+ if(S.goal){
+  var saved=sum(S.tx,'ahorro'),g=S.goal,pct=Math.min(100,saved/g.target*100),left=Math.max(0,g.target-saved);
+  var days=Math.ceil((new Date(g.date+'T23:59:00')-now)/86400000);
+  h+='<div class="card"><div class="row"><b class="grow">'+esc(g.name)+'</b><button class="x" onclick="clearGoal()" aria-label="Quitar meta">✕</button></div><div class="bar"><div style="width:'+pct+'%"></div></div><div><b>'+money(saved)+'</b> de '+money(g.target)+' ('+Math.round(pct)+'%)</div>';
+  if(left<=0)h+='<div style="color:var(--ok);font-weight:800;margin-top:6px">¡Meta cumplida!</div>';
+  else if(days<=0)h+='<div class="mute" style="margin-top:6px">La fecha ya pasó. Te faltan '+money(left)+'. Puedes cambiar la meta.</div>';
+  else h+='<div class="mute" style="margin-top:6px">Faltan '+days+' días. Para llegar, ahorra '+money(left/days)+' por día o '+money(left/Math.max(1,days/7))+' por semana.</div>';
+  h+='</div>';
+ }else{
+  h+='<details class="add"><summary>+ Crear meta</summary><label>¿Para qué ahorras?</label><input id="gn" placeholder="Ej: Celular nuevo"><div class="g2"><div><label>Monto</label><input id="gt" type="number" inputmode="numeric" placeholder="500000"></div><div><label>Fecha límite</label><input id="gd" type="date"></div></div><button class="btn" onclick="saveGoal()">Guardar meta</button></details>';
+ }
+ h+='<details class="add"><summary>+ Registrar movimiento</summary><div class="g2"><div><label>Tipo</label><select id="xk"><option value="gasto">Gasto</option><option value="ingreso">Ingreso</option><option value="ahorro">Ahorro para la meta</option></select></div><div><label>Valor</label><input id="xa" type="number" inputmode="numeric"></div><div><label>Categoría</label><select id="xc">'+CATS.map(function(c){return '<option>'+c+'</option>'}).join('')+'</select></div><div><label>Fecha</label><input id="xd" type="date" value="'+td+'"></div></div><label>Nota (opcional)</label><input id="xn"><button class="btn" onclick="addTx()">Guardar</button></details>';
+ var recent=S.tx.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0}).slice(0,15);
+ h+='<h2>Últimos movimientos</h2>';
+ if(!recent.length)h+='<div class="card mute">Aún no registras nada. Anota tu primer gasto del día.</div>';
+ h+=recent.map(function(t){var c=t.kind==='gasto'?'var(--bad)':'var(--ok)';return '<div class="card row"><div class="grow"><b>'+esc(t.cat)+'</b><div class="mute">'+fmtDate(t.date)+(t.note?' · '+esc(t.note):'')+'</div></div><b style="color:'+c+'">'+(t.kind==='gasto'?'−':'+')+money(t.amount)+'</b><button class="x" onclick="delTx(\''+t.id+'\')" aria-label="Borrar">✕</button></div>'}).join('');
+ h+=histHTML();return h;
+}
+
+var hm=null;
+function histMove(d){hm.m+=d;if(hm.m<0){hm.m=11;hm.y--}if(hm.m>11){hm.m=0;hm.y++}render()}
+function histJump(ym){var p=ym.split('-');hm={y:+p[0],m:+p[1]-1};render()}
+function histHTML(){
+ var now=new Date();if(!hm)hm={y:now.getFullYear(),m:now.getMonth()};
+ var ym=hm.y+'-'+pad(hm.m+1);
+ var mt=S.tx.filter(function(t){return t.date.slice(0,7)===ym});
+ var gs=mt.filter(function(t){return t.kind==='gasto'});
+ var byDay={},byCat={};
+ gs.forEach(function(t){byDay[t.date]=(byDay[t.date]||0)+t.amount;byCat[t.cat]=(byCat[t.cat]||0)+t.amount});
+ var days=Object.keys(byDay).sort(function(a,b){return byDay[b]-byDay[a]});
+ var cats=Object.keys(byCat).sort(function(a,b){return byCat[b]-byCat[a]});
+ var tot=sum(gs,'gasto'),ing=sum(mt,'ingreso'),ah=sum(mt,'ahorro');
+ var h='<h2>Historial por mes</h2><div class="card"><div class="row"><button class="x" onclick="histMove(-1)">◀</button><div class="grow" style="text-align:center"><b>'+MONTHS[hm.m]+' '+hm.y+'</b></div><button class="x" onclick="histMove(1)">▶</button></div>';
+ if(!mt.length){h+='<div class="mute" style="text-align:center;padding:8px">Sin movimientos en este mes.</div></div>'}
+ else{
+  h+='<div class="g2" style="margin-top:6px"><div><div class="mute">Gastaste</div><b>'+money(tot)+'</b></div><div><div class="mute">Ahorraste</div><b>'+money(ah)+'</b></div><div><div class="mute">Ingresos</div><b>'+money(ing)+'</b></div><div><div class="mute">Promedio por día con gasto</div><b>'+money(days.length?tot/days.length:0)+'</b></div></div>';
+  if(days.length){h+='<div style="margin-top:10px"><b>Días que más gastaste</b></div>'+days.slice(0,5).map(function(d){return '<div class="row" style="padding:3px 0"><span class="grow">'+fmtDate(d)+'</span><b>'+money(byDay[d])+'</b></div>'}).join('')}
+  if(cats.length){h+='<div style="margin-top:10px"><b>Por categoría</b></div>'+cats.map(function(c){var p=tot?byCat[c]/tot*100:0;return '<div style="padding:3px 0"><div class="row"><span class="grow">'+esc(c)+'</span><b>'+money(byCat[c])+'</b></div><div class="bar" style="height:8px;margin:3px 0"><div style="width:'+p+'%;background:var(--gold)"></div></div></div>'}).join('')}
+  h+='</div>';
+ }
+ var months={};S.tx.forEach(function(t){var k=t.date.slice(0,7);if(!months[k])months[k]=0;if(t.kind==='gasto')months[k]+=t.amount});
+ var ks=Object.keys(months).sort().reverse();
+ if(ks.length>1){h+='<div class="mute" style="margin-top:10px">Todos los meses</div>'+ks.map(function(k){var p=k.split('-');return '<div class="card row" style="cursor:pointer" onclick="histJump(\''+k+'\')"><span class="grow"><b>'+MONTHS[+p[1]-1]+' '+p[0]+'</b></span><b>'+money(months[k])+'</b></div>'}).join('')}
+ return h;
+}
+
+function render(){
+ var open=document.querySelector('details.add[open]');
+ $('app').innerHTML=tab==='agenda'?vAgenda():tab==='cal'?vCal():tab==='horario'?vHorario():vPlata();
+ drawNav();
+}
+render();checkReminders();S.tasks.forEach(schedNative);
+</script>
+</body>
+</html>
